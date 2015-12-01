@@ -14,19 +14,22 @@
  */
 var PositionSensorVRDevice = require('./base.js').PositionSensorVRDevice;
 var THREE = require('./three-math.js');
-var PosePredictor = require('./pose-predictor.js');
+var TouchPanner = require('./touch-panner.js');
+var Util = require('./util.js');
+
+WEBVR_YAW_ONLY = false;
 
 /**
  * The positional sensor, implemented using web DeviceOrientation APIs.
  */
-function GyroPositionSensorVRDevice() {
+function OrientationPositionSensorVRDevice() {
   this.deviceId = 'webvr-polyfill:gyro';
   this.deviceName = 'VR Position Device (webvr-polyfill:gyro)';
 
   // Subscribe to deviceorientation events.
-  window.addEventListener('deviceorientation', this.onDeviceOrientationChange.bind(this));
-  window.addEventListener('devicemotion', this.onDeviceMotionChange.bind(this));
-  window.addEventListener('orientationchange', this.onScreenOrientationChange.bind(this));
+  window.addEventListener('deviceorientation', this.onDeviceOrientationChange_.bind(this));
+  window.addEventListener('orientationchange', this.onScreenOrientationChange_.bind(this));
+
   this.deviceOrientation = null;
   this.screenOrientation = window.orientation;
 
@@ -38,15 +41,18 @@ function GyroPositionSensorVRDevice() {
   // -PI/2 around the x-axis.
   this.worldTransform = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
 
-  this.posePredictor = new PosePredictor();
+  // The quaternion for taking into account the reset position.
+  this.resetTransform = new THREE.Quaternion();
+
+  this.touchPanner = new TouchPanner();
 }
-GyroPositionSensorVRDevice.prototype = new PositionSensorVRDevice();
+OrientationPositionSensorVRDevice.prototype = new PositionSensorVRDevice();
 
 /**
  * Returns {orientation: {x,y,z,w}, position: null}.
  * Position is not supported since we can't do 6DOF.
  */
-GyroPositionSensorVRDevice.prototype.getState = function() {
+OrientationPositionSensorVRDevice.prototype.getState = function() {
   return {
     hasOrientation: true,
     orientation: this.getOrientation(),
@@ -55,22 +61,17 @@ GyroPositionSensorVRDevice.prototype.getState = function() {
   }
 };
 
-GyroPositionSensorVRDevice.prototype.onDeviceOrientationChange =
+OrientationPositionSensorVRDevice.prototype.onDeviceOrientationChange_ =
     function(deviceOrientation) {
   this.deviceOrientation = deviceOrientation;
 };
 
-GyroPositionSensorVRDevice.prototype.onDeviceMotionChange =
-    function(deviceMotion) {
-  this.deviceMotion = deviceMotion;
-};
-
-GyroPositionSensorVRDevice.prototype.onScreenOrientationChange =
+OrientationPositionSensorVRDevice.prototype.onScreenOrientationChange_ =
     function(screenOrientation) {
   this.screenOrientation = window.orientation;
 };
 
-GyroPositionSensorVRDevice.prototype.getOrientation = function() {
+OrientationPositionSensorVRDevice.prototype.getOrientation = function() {
   if (this.deviceOrientation == null) {
     return null;
   }
@@ -86,44 +87,24 @@ GyroPositionSensorVRDevice.prototype.getOrientation = function() {
   // Use three.js to convert to quaternion. Lifted from
   // https://github.com/richtr/threeVR/blob/master/js/DeviceOrientationController.js
   this.deviceEuler.set(beta, alpha, -gamma, 'YXZ');
-  this.finalQuaternion.setFromEuler(this.deviceEuler);
+  this.tmpQuaternion.setFromEuler(this.deviceEuler);
   this.minusHalfAngle = -orient / 2;
   this.screenTransform.set(0, Math.sin(this.minusHalfAngle), 0, Math.cos(this.minusHalfAngle));
+  // Take into account the reset transformation.
+  this.finalQuaternion.copy(this.resetTransform);
+  // And any rotations done via touch events.
+  this.finalQuaternion.multiply(this.touchPanner.getOrientation());
+  this.finalQuaternion.multiply(this.tmpQuaternion);
   this.finalQuaternion.multiply(this.screenTransform);
   this.finalQuaternion.multiply(this.worldTransform);
 
-  // DEBUG ONLY: Log rotation rate if it's large enough.
-  /*
-  if (this.deviceMotion) {
-    var rotRate = this.deviceMotion.rotationRate;
-    if (Math.abs(rotRate.alpha) > 5) {
-      console.log('Rotation around Z: %f deg', rotRate.alpha);
-    }
-    if (Math.abs(rotRate.beta) > 5) {
-      console.log('Rotation around X: %f deg', rotRate.beta);
-    }
-    if (Math.abs(rotRate.gamma) > 5) {
-      console.log('Rotation around Y: %f deg', rotRate.gamma);
-    }
-  }
-  */
-  this.posePredictor.setScreenOrientation(this.screenOrientation);
-
-  //var bestTime = this.rafTime || window.performance.now();
-  //var bestTime = window.performance.now();
-  var bestTime = this.deviceOrientation.timeStamp;
-  var rotRate = this.deviceMotion && this.deviceMotion.rotationRate;
-  return this.posePredictor.getPrediction(
-      this.finalQuaternion, rotRate, bestTime);
+  return this.finalQuaternion;
 };
 
-GyroPositionSensorVRDevice.prototype.resetSensor = function() {
-  console.error('Not implemented yet.');
+OrientationPositionSensorVRDevice.prototype.resetSensor = function() {
+  var angle = THREE.Math.degToRad(this.deviceOrientation.alpha);
+  console.log('Normalizing yaw to %f', angle);
+  this.resetTransform.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -angle);
 };
 
-GyroPositionSensorVRDevice.prototype.setAnimationFrameTime = function(rafTime) {
-  this.rafTime = rafTime;
-};
-
-
-module.exports = GyroPositionSensorVRDevice;
+module.exports = OrientationPositionSensorVRDevice;
