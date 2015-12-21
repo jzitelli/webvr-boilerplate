@@ -241,7 +241,7 @@ WebVRManager.prototype.setMode_ = function(mode) {
 
   if (this.mode == Modes.VR) {
     // In VR mode, set the HMDVRDevice parameters.
-    this.setHMDVRDeviceParams_(this.getViewer());
+    //this.setHMDVRDeviceParams_(this.getViewer());
   }
 };
 
