@@ -45,17 +45,25 @@ function WebVRManager(renderer, effect, params) {
   this.mode = Modes.UNKNOWN;
 
   // Set option to hide the button.
-  var hideButton = this.params.hideButton || false;
+  this.hideButton = this.params.hideButton || false;
+  // Whether or not the FOV should be distorted or un-distorted. By default, it
+  // should be distorted, but in the case of vertex shader based distortion,
+  // ensure that we use undistorted parameters.
+  this.isUndistorted = !!this.params.isUndistorted;
 
   // Save the THREE.js renderer and effect for later.
   this.renderer = renderer;
   this.effect = effect;
-  this.distorter = new CardboardDistorter(renderer);
   this.button = new ButtonManager();
   this.rotateInstructions = new RotateInstructions();
   this.viewerSelector = new ViewerSelector(DeviceInfo.Viewers);
 
-  console.log('Using the %s viewer.', this.getViewer().name);
+  // Create device info and set the correct default viewer.
+  this.deviceInfo = new DeviceInfo();
+  this.deviceInfo.viewer = DeviceInfo.Viewers[this.viewerSelector.selectedKey];
+  console.log('Using the %s viewer.', this.getViewer().label);
+
+  this.distorter = new CardboardDistorter(renderer, this.deviceInfo);
 
   this.isVRCompatible = false;
   this.isFullscreenDisabled = !!Util.getQueryParameter('no_fullscreen');
@@ -65,15 +73,16 @@ function WebVRManager(renderer, effect, params) {
     this.startMode = startModeParam;
   }
 
-  // Set the correct viewer and listen for changes.
-  this.onViewerChanged_(this.getViewer());
+  // Set the correct viewer profile, but only if this is Cardboard.
+  if (Util.isMobile()) {
+    this.onViewerChanged_(this.getViewer());
+  }
+  // Listen for changes to the viewer.
   this.viewerSelector.on('change', this.onViewerChanged_.bind(this));
 
-  if (hideButton) {
+  if (this.hideButton) {
     this.button.setVisibility(false);
   }
-
-  var deviceInfo = new DeviceInfo();
 
   // Check if the browser is compatible with WebVR.
   this.getDeviceByType_(HMDVRDevice).then(function(hmd) {
@@ -85,7 +94,7 @@ function WebVRManager(renderer, effect, params) {
       this.isVRCompatible = true;
       // Only enable distortion if we are dealing using the polyfill, we have a
       // perfect device match, and it's not prevented via configuration.
-      if (hmd.deviceName.indexOf('webvr-polyfill') == 0 && deviceInfo.getDevice() &&
+      if (hmd.deviceName.indexOf('webvr-polyfill') == 0 && this.deviceInfo.getDevice() &&
           !WebVRConfig.PREVENT_DISTORTION) {
         this.distorter.setActive(true);
       }
@@ -163,7 +172,15 @@ WebVRManager.prototype.isVRMode = function() {
 };
 
 WebVRManager.prototype.getViewer = function() {
-  return DeviceInfo.Viewers[this.viewerSelector.selectedKey];
+  return this.deviceInfo.viewer;
+};
+
+WebVRManager.prototype.getDevice = function() {
+  return this.deviceInfo.device;
+};
+
+WebVRManager.prototype.getDeviceInfo = function() {
+  return this.deviceInfo;
 };
 
 WebVRManager.prototype.render = function(scene, camera, timestamp) {
@@ -220,6 +237,11 @@ WebVRManager.prototype.setMode_ = function(mode) {
     } else {
       WebVRConfig.TOUCH_PANNER_DISABLED = false;
     }
+  }
+
+  if (this.mode == Modes.VR) {
+    // In VR mode, set the HMDVRDevice parameters.
+    this.setHMDVRDeviceParams_(this.getViewer());
   }
 };
 
@@ -422,28 +444,46 @@ WebVRManager.prototype.exitFullscreen_ = function() {
 };
 
 WebVRManager.prototype.onViewerChanged_ = function(viewer) {
+  this.deviceInfo.setViewer(viewer);
+
+  // Update the distortion appropriately.
+  this.distorter.recalculateUniforms();
+
+  // And update the HMDVRDevice parameters.
+  this.setHMDVRDeviceParams_(viewer);
+
+  // Notify anyone interested in this event.
   this.emit('viewerchange', viewer);
-
-  // Set the proper coefficients.
-  this.distorter.setDistortionCoefficients(viewer.distortionCoefficients);
-
-  // And update the camera FOV.
-  this.setCardboardFov_(viewer.fov);
 };
 
 /**
- * Sets the FOV of the CardboardHMDVRDevice. These changes are ultimately
- * handled by VREffect.
+ * Sets parameters on CardboardHMDVRDevice. These changes are ultimately handled
+ * by VREffect.
  */
-WebVRManager.prototype.setCardboardFov_ = function(fov) {
+WebVRManager.prototype.setHMDVRDeviceParams_ = function(viewer) {
   this.getDeviceByType_(HMDVRDevice).then(function(hmd) {
-    if (hmd) {
-      hmd.fov.upDegrees = fov;
-      hmd.fov.downDegrees = fov;
-      hmd.fov.leftDegrees = fov;
-      hmd.fov.rightDegrees = fov;
+    if (!hmd) {
+      return;
     }
-  });
+
+    // If we can set fields of view, do that now.
+    if (hmd.setFieldOfView) {
+      // Calculate the optimal field of view for each eye.
+      hmd.setFieldOfView(this.deviceInfo.getFieldOfViewLeftEye(this.isUndistorted),
+                         this.deviceInfo.getFieldOfViewRightEye(this.isUndistorted));
+    }
+
+    // Note: setInterpupillaryDistance is not part of the WebVR standard.
+    if (hmd.setInterpupillaryDistance) {
+      hmd.setInterpupillaryDistance(viewer.interLensDistance);
+    }
+
+    if (hmd.setRenderRect) {
+      // TODO(smus): If we can set the render rect, do it.
+      //var renderRect = this.deviceInfo.getUndistortedViewportLeftEye();
+      //hmd.setRenderRect(renderRect, renderRect);
+    }
+  }.bind(this));
 };
 
 module.exports = WebVRManager;

@@ -1,4 +1,4 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 /**
  * Responsible for showing the vertical alignment UI that separates left and
  * right eye images.
@@ -14,7 +14,8 @@ function Aligner() {
   s.left = '50%';
   s.display = 'none';
   s.marginLeft = '-2px';
-  s.border = '2px solid black';
+  s.border = '1px solid black';
+  s.borderTop = '0px';
   this.el = el;
 
   document.body.appendChild(el);
@@ -30,7 +31,7 @@ Aligner.prototype.hide = function() {
 
 module.exports = Aligner;
 
-},{}],2:[function(require,module,exports){
+},{}],2:[function(_dereq_,module,exports){
 /*
  * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,10 +47,10 @@ module.exports = Aligner;
  * limitations under the License.
  */
 
-var Aligner = require('./aligner.js');
-var Emitter = require('./emitter.js');
-var Modes = require('./modes.js');
-var Util = require('./util.js');
+var Aligner = _dereq_('./aligner.js');
+var Emitter = _dereq_('./emitter.js');
+var Modes = _dereq_('./modes.js');
+var Util = _dereq_('./util.js');
 
 /**
  * Everything having to do with the WebVR button.
@@ -214,7 +215,7 @@ ButtonManager.prototype.loadIcons_ = function() {
 
 module.exports = ButtonManager;
 
-},{"./aligner.js":1,"./emitter.js":6,"./modes.js":8,"./util.js":10}],3:[function(require,module,exports){
+},{"./aligner.js":1,"./emitter.js":7,"./modes.js":9,"./util.js":11}],3:[function(_dereq_,module,exports){
 /*
  * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -230,10 +231,7 @@ module.exports = ButtonManager;
  * limitations under the License.
  */
 
-var BarrelDistortion = require('./distortion/barrel-distortion-fragment.js');
-var DeviceInfo = require('./device-info.js');
-
-var deviceInfo = new DeviceInfo();
+var BarrelDistortion = _dereq_('./distortion/barrel-distortion-fragment-v2.js');
 
 
 function ShaderPass(shader) {
@@ -253,7 +251,7 @@ function ShaderPass(shader) {
 };
 
 ShaderPass.prototype.render = function(renderFunc, buffer) {
-  this.uniforms['texture'].value = buffer;
+  this.uniforms.texture.value = buffer;
   this.quad.material = this.material;
   renderFunc(this.scene, this.camera);
 };
@@ -265,31 +263,13 @@ function createRenderTarget(renderer) {
     minFilter: THREE.LinearFilter,
     magFilter: THREE.LinearFilter,
     format: THREE.RGBFormat,
-    stencilBuffer: false,
-    depthBuffer: false
+    stencilBuffer: false
   };
 
   return new THREE.WebGLRenderTarget(width, height, parameters);
 }
 
-function CardboardDistorter(renderer) {
-  var left = deviceInfo.getLeftEyeCenter();
-  var right = deviceInfo.getRightEyeCenter();
-
-  // Parameters for the fragment shader.
-  if (BarrelDistortion.type == 'fragment') {
-    // Pass in left and right eye centers into the shader.
-    BarrelDistortion.leftCenter = {type: 'v2', value: new THREE.Vector2(left.x, left.y)};
-    BarrelDistortion.rightCenter = {type: 'v2', value: new THREE.Vector2(right.x, right.y)};
-
-    // Allow custom background colors if this global is set.
-    if (WebVRConfig.DISTORTION_BGCOLOR) {
-      BarrelDistortion.uniforms.background =
-        {type: 'v4', value: WebVRConfig.DISTORTION_BGCOLOR};
-    }
-  }
-  // TODO: Implement barrel distortion using a mesh.
-
+function CardboardDistorter(renderer, deviceInfo) {
   this.shaderPass = new ShaderPass(BarrelDistortion);
   this.renderer = renderer;
 
@@ -297,19 +277,22 @@ function CardboardDistorter(renderer) {
   this.genuineRender = renderer.render;
   this.genuineSetSize = renderer.setSize;
   this.isActive = false;
+
+  this.deviceInfo = deviceInfo;
+  //this.recalculateUniforms();
 }
 
 CardboardDistorter.prototype.patch = function() {
   if (!this.isActive) {
     return;
   }
-  this.textureTarget = createRenderTarget(renderer);
+  this.textureTarget = createRenderTarget(this.renderer);
 
   this.renderer.render = function(scene, camera, renderTarget, forceClear) {
     this.genuineRender.call(this.renderer, scene, camera, this.textureTarget, forceClear);
   }.bind(this);
 
-  renderer.setSize = function(width, height) {
+  this.renderer.setSize = function(width, height) {
     this.genuineSetSize.call(this.renderer, width, height);
     this.textureTarget = createRenderTarget(this.renderer);
   }.bind(this);
@@ -336,7 +319,7 @@ CardboardDistorter.prototype.postRender = function() {
   }
   var size = this.renderer.getSize();
   this.renderer.setViewport(0, 0, size.width, size.height);
-  this.shaderPass.render(this.genuineRender.bind(renderer), this.textureTarget);
+  this.shaderPass.render(this.genuineRender.bind(this.renderer), this.textureTarget);
 };
 
 /**
@@ -348,6 +331,49 @@ CardboardDistorter.prototype.setActive = function(state) {
 };
 
 /**
+ * Updates uniforms.
+ */
+CardboardDistorter.prototype.recalculateUniforms = function() {
+  var uniforms = this.shaderPass.material.uniforms;
+
+  var distortedProj = this.deviceInfo.getProjectionMatrixLeftEye();
+  var undistortedProj = this.deviceInfo.getProjectionMatrixLeftEye(true);
+  var viewport = this.deviceInfo.getUndistortedViewportLeftEye();
+
+  var device = this.deviceInfo.device;
+  var params = {
+    xScale: viewport.width / (device.width / 2),
+    yScale: viewport.height / device.height,
+    xTrans: 2 * (viewport.x + viewport.width / 2) / (device.width / 2) - 1,
+    yTrans: 2 * (viewport.y + viewport.height / 2) / device.height - 1
+  }
+
+  uniforms.projectionLeft.value.copy(
+      this.projectionMatrixToVector_(distortedProj));
+  uniforms.unprojectionLeft.value.copy(
+      this.projectionMatrixToVector_(undistortedProj, params));
+
+  // Set distortion coefficients.
+  var coefficients = this.deviceInfo.viewer.distortionCoefficients;
+  uniforms.distortion.value.set(coefficients[0], coefficients[1]);
+      
+
+  // For viewer profile debugging, show the lens center.
+  if (WebVRConfig.SHOW_EYE_CENTERS) {
+    uniforms.showCenter.value = 1;
+  }
+
+  // Allow custom background colors if this global is set.
+  if (WebVRConfig.DISTORTION_BGCOLOR) {
+    uniforms.backgroundColor.value =
+        WebVRConfig.DISTORTION_BGCOLOR;
+  }
+
+  this.shaderPass.material.needsUpdate = true;
+};
+
+
+/**
  * Sets distortion coefficients as a Vector2.
  */
 CardboardDistorter.prototype.setDistortionCoefficients = function(coefficients) {
@@ -356,9 +382,30 @@ CardboardDistorter.prototype.setDistortionCoefficients = function(coefficients) 
   this.shaderPass.material.needsUpdate = true;
 };
 
+/**
+ * Utility to convert the projection matrix to a vector accepted by the shader.
+ *
+ * @param {Object} opt_params A rectangle to scale this vector by.
+ */
+CardboardDistorter.prototype.projectionMatrixToVector_ = function(matrix, opt_params) {
+  var params = opt_params || {};
+  var xScale = params.xScale || 1;
+  var yScale = params.yScale || 1;
+  var xTrans = params.xTrans || 0;
+  var yTrans = params.yTrans || 0;
+
+  var elements = matrix.elements;
+  var vec = new THREE.Vector4();
+  vec.set(elements[4*0 + 0] * xScale,
+          elements[4*1 + 1] * yScale,
+          elements[4*2 + 0] - 1 - xTrans,
+          elements[4*2 + 1] - 1 - yTrans).divideScalar(2);
+  return vec;
+};
+
 module.exports = CardboardDistorter;
 
-},{"./device-info.js":4,"./distortion/barrel-distortion-fragment.js":5}],4:[function(require,module,exports){
+},{"./distortion/barrel-distortion-fragment-v2.js":5}],4:[function(_dereq_,module,exports){
 /*
  * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -374,81 +421,149 @@ module.exports = CardboardDistorter;
  * limitations under the License.
  */
 
-var Util = require('./util.js');
+var Distortion = _dereq_('./distortion/distortion.js');
+var Util = _dereq_('./util.js');
+
+function Device(params) {
+  this.label = params.label;
+  this.userAgentRegExp = params.userAgentRegExp;
+
+  this.width = params.width || this.calcWidth_();
+  this.height = params.height || this.calcHeight_();
+  this.widthMeters = params.widthMeters;
+  this.heightMeters = params.heightMeters;
+  this.bevelMeters = params.bevelMeters;
+}
+
+Device.prototype.calcWidth_ = function() {
+  return Math.max(window.screen.width, window.screen.height) *
+      window.devicePixelRatio;
+};
+
+Device.prototype.calcHeight_ = function() {
+  return Math.min(window.screen.width, window.screen.height) *
+      window.devicePixelRatio;
+};
+
 
 // Display width, display height and bevel measurements done on real phones.
 // Resolutions from http://www.paintcodeapp.com/news/ultimate-guide-to-iphone-resolutions
 var iOSDevices = {
+  iPhone4: new Device({
+    width: 640,
+    height: 960,
+    widthMeters: 0.075,
+    heightMeters: 0.0495,
+    bevelMeters: 0.004
+  }),
   iPhone5: new Device({
     width: 640,
     height: 1136,
-    widthMm: 51.27,
-    heightMm: 90.11,
-    bevelMm: 3.96
+    widthMeters: 0.09011,
+    heightMeters: 0.05127,
+    bevelMeters: 0.00343
   }),
   iPhone6: new Device({
     width: 750,
     height: 1334,
-    widthMm: 58.4,
-    heightMm: 103.8,
-    bevelMm: 3.71
+    widthMeters: 0.1038,
+    heightMeters: 0.0584,
+    bevelMeters: 0.004
   }),
   iPhone6Plus: new Device({
     width: 1242,
     height: 2208,
-    widthMm: 69.54,
-    heightMm: 122.35,
-    bevelMm: 4.62
+    widthMeters: 0.12235,
+    heightMeters: 0.06954,
+    bevelMeters: 0.00471
   })
 };
 
+
 var AndroidDevices = {
   Nexus5: new Device({
-    userAgentRegExp: /Nexus 5/,
-    widthMm: 62,
-    heightMm: 110,
-    bevelMm: 4
+    userAgentRegExp: /Nexus 5 /, // Trailing space to disambiguate from 5X.
+    widthMeters: 0.110,
+    heightMeters: 0.062,
+    bevelMeters: 0.004
+  }),
+  Nexus6: new Device({
+    userAgentRegExp: /Nexus 6 /, // Trailing space to disambiguate from 6P.
+    widthMeters: 0.1593,
+    heightMeters: 0.083,
+    bevelMeters: 0.004
+  }),
+  Nexus5X: new Device({
+    userAgentRegExp: /Nexus 5X/,
+    widthMeters: 0.1155,
+    heightMeters: 0.065,
+    bevelMeters: 0.004
+  }),
+  Nexus6P: new Device({
+    userAgentRegExp: /Nexus 6P/,
+    widthMeters: 0.126,
+    heightMeters: 0.0705,
+    bevelMeters: 0.004
   }),
   GalaxyS3: new Device({
     userAgentRegExp: /GT-I9300/,
-    widthMm: 60,
-    heightMm: 106,
-    bevelMm: 5
+    widthMeters: 0.106,
+    heightMeters: 0.060,
+    bevelMeters: 0.005
   }),
   GalaxyS4: new Device({
     userAgentRegExp: /GT-I9505/,
-    widthMm: 62.5,
-    heightMm: 111,
-    bevelMm: 4
+    widthMeters: 0.111,
+    heightMeters: 0.0625,
+    bevelMeters: 0.004
   }),
   GalaxyS5: new Device({
     userAgentRegExp: /SM-G900F/,
-    widthMm: 66,
-    heightMm: 113,
-    bevelMm: 5
+    widthMeters: 0.113,
+    heightMeters: 0.066,
+    bevelMeters: 0.005
   }),
   GalaxyS6: new Device({
     userAgentRegExp: /SM-G920/,
-    widthMm: 63.5,
-    heightMm: 114,
-    bevelMm: 3.5
+    widthMeters: 0.114,
+    heightMeters: 0.0635,
+    bevelMeters: 0.0035
   }),
 };
 
+
+var AVERAGE_ANDROID = new Device({
+  label: 'Average android (ie. no specific device detected)',
+  widthMeters: AndroidDevices.Nexus5.widthMeters,
+  heightMeters: AndroidDevices.Nexus5.heightMeters,
+  bevelMeters: AndroidDevices.Nexus5.bevelMeters
+});
+
+
 var Viewers = {
   CardboardV1: new CardboardViewer({
-    name: 'Cardboard 2014 (Magnet)',
+    id: 'CardboardV1',
+    label: 'Cardboard I/O 2014',
     fov: 40,
-    ipdMm: 60,
-    baselineLensCenterMm: 37.26,
-    distortionCoefficients: [0.441, 0.156]
+    interLensDistance: 0.060,
+    baselineLensDistance: 0.035,
+    screenLensDistance: 0.042,
+    distortionCoefficients: [0.441, 0.156],
+    inverseCoefficients: [-0.4410035, 0.42756155, -0.4804439, 0.5460139,
+      -0.58821183, 0.5733938, -0.48303202, 0.33299083, -0.17573841,
+      0.0651772, -0.01488963, 0.001559834]
   }),
   CardboardV2: new CardboardViewer({
-    name: 'Cardboard 2015 (Button)',
+    id: 'CardboardV2',
+    label: 'Cardboard I/O 2015',
     fov: 60,
-    ipdMm: 64,
-    baselineLensCenterMm: 37.26,
-    distortionCoefficients: [0.34, 0.55]
+    interLensDistance: 0.064,
+    baselineLensDistance: 0.035,
+    screenLensDistance: 0.039,
+    distortionCoefficients: [0.34, 0.55],
+    inverseCoefficients: [-0.33836704, -0.18162185, 0.862655, -1.2462051,
+      1.0560602, -0.58208317, 0.21609078, -0.05444823, 0.009177956,
+      -9.904169E-4, 6.183535E-5, -1.6981803E-6]
   })
 };
 
@@ -462,43 +577,15 @@ var DEFAULT_RIGHT_CENTER = {x: 0.5, y: 0.5};
  */
 function DeviceInfo() {
   this.device = this.determineDevice_();
-  this.enclosure = Viewers.CardboardV1;
+  this.viewer = Viewers.CardboardV1;
 }
 
 DeviceInfo.prototype.getDevice = function() {
   return this.device;
 };
 
-/**
- * Gets the coordinates (in [0, 1]) for the left eye.
- */
-DeviceInfo.prototype.getLeftEyeCenter = function() {
-  if (!this.device) {
-    return DEFAULT_LEFT_CENTER;
-  }
-  // Get parameters from the enclosure.
-  var eyeToMid = this.enclosure.ipdMm / 2;
-  var eyeToBase = this.enclosure.baselineLensCenterMm;
-
-  // Get parameters from the phone.
-  var halfWidthMm = this.device.heightMm / 2;
-  var heightMm = this.device.widthMm;
-
-  // Do calculations.
-  // Measure the distance between bottom of screen and center.
-  var eyeToBevel = eyeToBase - this.device.bevelMm;
-  var px = 1 - (eyeToMid / halfWidthMm);
-  var py = 1 - (eyeToBevel / heightMm);
-
-  return {x: px, y: py};
-};
-
-DeviceInfo.prototype.getRightEyeCenter = function() {
-  if (!this.device) {
-    return DEFAULT_RIGHT_CENTER;
-  }
-  var left = this.getLeftEyeCenter();
-  return {x: 1 - left.x, y: left.y};
+DeviceInfo.prototype.setViewer = function(viewer) {
+  this.viewer = viewer;
 };
 
 DeviceInfo.prototype.determineDevice_ = function() {
@@ -545,96 +632,317 @@ DeviceInfo.prototype.determineAndroid_ = function() {
       return device;
     }
   }
-  // No device matched.
-  return null;
+  // No device matched, so return a default (average) smartphone.
+  console.warn('No specific Android device detected. Using a generic size, ' +
+               'which may lead to VR rendering issues.');
+  return AVERAGE_ANDROID;
+};
+
+/**
+ * Calculates field of view for the left eye.
+ */
+DeviceInfo.prototype.getDistortedFieldOfViewLeftEye = function() {
+  var viewer = this.viewer;
+  var device = this.device;
+
+  var distortion = new Distortion(viewer.distortionCoefficients);
+
+  // Device.height and device.width for device in portrait mode, so transpose.
+  var eyeToScreenDistance = viewer.screenLensDistance;
+
+  var outerDist = (device.widthMeters - viewer.interLensDistance) / 2;
+  var innerDist = viewer.interLensDistance / 2;
+  var bottomDist = viewer.baselineLensDistance - device.bevelMeters;
+  var topDist = device.heightMeters - bottomDist;
+
+  var outerAngle = THREE.Math.radToDeg(Math.atan(
+      distortion.distort(outerDist / eyeToScreenDistance)));
+  var innerAngle = THREE.Math.radToDeg(Math.atan(
+      distortion.distort(innerDist / eyeToScreenDistance)));
+  var bottomAngle = THREE.Math.radToDeg(Math.atan(
+      distortion.distort(bottomDist / eyeToScreenDistance)));
+  var topAngle = THREE.Math.radToDeg(Math.atan(
+      distortion.distort(topDist / eyeToScreenDistance)));
+
+  return {
+    leftDegrees: Math.min(outerAngle, viewer.fov),
+    rightDegrees: Math.min(innerAngle, viewer.fov),
+    downDegrees: Math.min(bottomAngle, viewer.fov),
+    upDegrees: Math.min(topAngle, viewer.fov)
+  }
+};
+
+DeviceInfo.prototype.getFieldOfViewLeftEye = function(opt_isUndistorted) {
+  return opt_isUndistorted ? this.getUndistortedFieldOfViewLeftEye() :
+      this.getDistortedFieldOfViewLeftEye();
+};
+
+DeviceInfo.prototype.getFieldOfViewRightEye = function(opt_isUndistorted) {
+  var fov = this.getFieldOfViewLeftEye(opt_isUndistorted);
+  return {
+    leftDegrees: fov.rightDegrees,
+    rightDegrees: fov.leftDegrees,
+    upDegrees: fov.upDegrees,
+    downDegrees: fov.downDegrees
+  };
+};
+
+/**
+ * Calculates a projection matrix for the left eye.
+ */
+DeviceInfo.prototype.getProjectionMatrixLeftEye = function(opt_isUndistorted) {
+  var fov = this.getFieldOfViewLeftEye(opt_isUndistorted);
+
+  var projectionMatrix = new THREE.Matrix4();
+  var near = 0.1;
+  var far = 1000;
+  var left = Math.tan(THREE.Math.degToRad(fov.leftDegrees)) * near;
+  var right = Math.tan(THREE.Math.degToRad(fov.rightDegrees)) * near;
+  var bottom = Math.tan(THREE.Math.degToRad(fov.downDegrees)) * near;
+  var top = Math.tan(THREE.Math.degToRad(fov.upDegrees)) * near;
+
+  // makeFrustum expects units in tan-angle space.
+  projectionMatrix.makeFrustum(-left, right, -bottom, top, near, far);
+  
+  return projectionMatrix;
 };
 
 
-function Device(params) {
-  this.userAgentRegExp = params.userAgentRegExp;
-  this.width = params.width;
-  this.height = params.height;
-  this.widthMm = params.widthMm;
-  this.heightMm = params.heightMm;
-  this.bevelMm = params.bevelMm;
-}
+DeviceInfo.prototype.getUndistortedViewportLeftEye = function() {
+  var p = this.getUndistortedParams_();
+  var viewer = this.viewer;
+  var device = this.device;
+
+  var eyeToScreenDistance = viewer.screenLensDistance;
+  var screenWidth = device.widthMeters / eyeToScreenDistance;
+  var screenHeight = device.heightMeters / eyeToScreenDistance;
+  var xPxPerTanAngle = device.width / screenWidth;
+  var yPxPerTanAngle = device.height / screenHeight;
+
+  var x = Math.round((p.eyePosX - p.outerDist) * xPxPerTanAngle);
+  var y = Math.round((p.eyePosY - p.bottomDist) * yPxPerTanAngle);
+  return {
+    x: x,
+    y: y,
+    width: Math.round((p.eyePosX + p.innerDist) * xPxPerTanAngle) - x,
+    height: Math.round((p.eyePosY + p.topDist) * yPxPerTanAngle) - y
+  };
+};
+
+/**
+ * Calculates undistorted field of view for the left eye.
+ */
+DeviceInfo.prototype.getUndistortedFieldOfViewLeftEye = function() {
+  var p = this.getUndistortedParams_();
+
+  return {
+    leftDegrees: THREE.Math.radToDeg(Math.atan(p.outerDist)),
+    rightDegrees: THREE.Math.radToDeg(Math.atan(p.innerDist)),
+    downDegrees: THREE.Math.radToDeg(Math.atan(p.bottomDist)),
+    upDegrees: THREE.Math.radToDeg(Math.atan(p.topDist))
+  };
+};
+
+DeviceInfo.prototype.getUndistortedParams_ = function() {
+  var viewer = this.viewer;
+  var device = this.device;
+  var distortion = new Distortion(viewer.distortionCoefficients);
+
+  // Most of these variables in tan-angle units.
+  var eyeToScreenDistance = viewer.screenLensDistance;
+  var halfLensDistance = viewer.interLensDistance / 2 / eyeToScreenDistance;
+  var screenWidth = device.widthMeters / eyeToScreenDistance;
+  var screenHeight = device.heightMeters / eyeToScreenDistance;
+
+  var eyePosX = screenWidth / 2 - halfLensDistance;
+  var eyePosY = (viewer.baselineLensDistance - device.bevelMeters) / eyeToScreenDistance;
+
+  var maxFov = viewer.fov;
+  var viewerMax = distortion.distortInverse(Math.tan(THREE.Math.degToRad(maxFov)));
+  var outerDist = Math.min(eyePosX, viewerMax);
+  var innerDist = Math.min(halfLensDistance, viewerMax);
+  var bottomDist = Math.min(eyePosY, viewerMax);
+  var topDist = Math.min(screenHeight - eyePosY, viewerMax);
+
+  return {
+    outerDist: outerDist,
+    innerDist: innerDist,
+    topDist: topDist,
+    bottomDist: bottomDist,
+    eyePosX: eyePosX,
+    eyePosY: eyePosY
+  };
+};
 
 
 function CardboardViewer(params) {
-  // A human readable name.
-  this.name = params.name;
+  // A machine readable ID.
+  this.id = params.id;
+  // A human readable label.
+  this.label = params.label;
+
   // Field of view in degrees (per side).
   this.fov = params.fov;
+
+  // Distance between lens centers in meters.
+  this.interLensDistance = params.interLensDistance;
+  // Distance between viewer baseline and lens center in meters.
+  this.baselineLensDistance = params.baselineLensDistance;
+  // Screen-to-lens distance in meters.
+  this.screenLensDistance = params.screenLensDistance;
+
   // Distortion coefficients.
   this.distortionCoefficients = params.distortionCoefficients;
-  // IPD in millimeters.
-  this.ipdMm = params.ipdMm;
-  // Distance between baseline and lens center.
-  this.baselineLensCenterMm = params.baselineLensCenterMm;
+  // Inverse distortion coefficients.
+  // TODO: Calculate these from distortionCoefficients in the future.
+  this.inverseCoefficients = params.inverseCoefficients;
 }
 
-// Export enclosure information.
+// Export viewer information.
 DeviceInfo.Viewers = Viewers;
 module.exports = DeviceInfo;
 
-},{"./util.js":10}],5:[function(require,module,exports){
+},{"./distortion/distortion.js":6,"./util.js":11}],5:[function(_dereq_,module,exports){
 var BarrelDistortionFragment = {
-  type: 'fragment',
+  type: 'fragment_v2',
 
+  
   uniforms: {
-    'texture': {type: 't', value: null},
-    'distortion': {type: 'v2', value: new THREE.Vector2(0.441, 0.156)},
-    'leftCenter': {type: 'v2', value: new THREE.Vector2(0.5, 0.5)},
-    'rightCenter': {type: 'v2', value: new THREE.Vector2(0.5, 0.5)},
-    'background': {type: 'v4', value: new THREE.Vector4(0.0, 0.0, 0.0, 1.0)},
+    'texture':   { type: 't', value: null },
+    'distortion': { type: 'v2', value: new THREE.Vector2(0.441, 0.156) },
+    'projectionLeft':    { type: 'v4', value: new THREE.Vector4(1.0, 1.0, -0.5, -0.5) },
+    'unprojectionLeft':  { type: 'v4', value: new THREE.Vector4(1.0, 1.0, -0.5, -0.5) },
+    'backgroundColor': { type: 'v4', value: new THREE.Vector4(0.0, 0.0, 0.0, 1.0) },
+    'showCenter': { type: 'i', value: 0},
+    'dividerColor': { type: 'v4', value: new THREE.Vector4(0.5, 0.5, 0.5, 1.0) },
   },
 
   vertexShader: [
-    'varying vec2 vUV;',
+  'varying vec2 vUV;',
 
-    'void main() {',
-      'vUV = uv;',
-      'gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
-    '}'
+  'void main() {',
+    'vUV = uv;',
+    'gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+  '}'
 
   ].join('\n'),
 
+  // TODO: use min/max/saturate instead of conditionals
   fragmentShader: [
     'uniform sampler2D texture;',
 
     'uniform vec2 distortion;',
-    'uniform vec2 leftCenter;',
-    'uniform vec2 rightCenter;',
-    'uniform vec4 background;',
+    'uniform vec4 backgroundColor;',
+    'uniform vec4 projectionLeft;',
+    'uniform vec4 unprojectionLeft;',
+    'uniform int showCenter;',
+    'uniform vec4 dividerColor;',
+
+    // right projections are shifted and vertically mirrored relative to left
+    'vec4 projectionRight = ',
+    '(projectionLeft + vec4(0.0, 0.0, 1.0, 0.0)) * vec4(1.0, 1.0, -1.0, 1.0);',
+    'vec4 unprojectionRight = ',
+    '(unprojectionLeft + vec4(0.0, 0.0, 1.0, 0.0)) * vec4(1.0, 1.0, -1.0, 1.0);',
 
     'varying vec2 vUV;',
 
     'float poly(float val) {',
-      'return 1.0 + (distortion.x + distortion.y * val) * val;',
+      'return (showCenter == 1 && val < 0.00005) ? ',
+      '10000.0 : 1.0 + (distortion.x + distortion.y * val) * val;',
     '}',
 
-    'vec2 barrel(vec2 v, vec2 center) {',
-      'vec2 w = v - center;',
-      'return poly(dot(w, w)) * w + center;',
+    'vec2 barrel(vec2 v, vec4 projection, vec4 unprojection) {',
+      'vec2 w = (v + unprojection.zw) / unprojection.xy;',
+      'return projection.xy * (poly(dot(w, w)) * w) - projection.zw;',
     '}',
 
     'void main() {',
-      'bool isLeft = (vUV.x < 0.5);',
-      'float offset = isLeft ? 0.0 : 0.5;',
-      'vec2 a = barrel(vec2((vUV.x - offset) / 0.5, vUV.y), isLeft ? leftCenter : rightCenter);',
-      'if (a.x < 0.0 || a.x > 1.0 || a.y < 0.0 || a.y > 1.0) {',
-        'gl_FragColor = background;',
+      'vec2 a = (vUV.x < 0.5) ? ',
+      'barrel(vec2(vUV.x / 0.5, vUV.y), projectionLeft, unprojectionLeft) : ',
+      'barrel(vec2((vUV.x - 0.5) / 0.5, vUV.y), projectionRight, unprojectionRight);',
+
+      'if (dividerColor.w > 0.0 && abs(vUV.x - 0.5) < .001) {',
+        // Don't render the divider, since it's rendered in HTML.
+        //'gl_FragColor = dividerColor;',
+      '} else if (a.x < 0.0 || a.x > 1.0 || a.y < 0.0 || a.y > 1.0) {',
+        'gl_FragColor = backgroundColor;',
       '} else {',
-        'gl_FragColor = texture2D(texture, vec2(a.x * 0.5 + offset, a.y));',
+        'gl_FragColor = texture2D(texture, vec2(a.x * 0.5 + (vUV.x < 0.5 ? 0.0 : 0.5), a.y));',
       '}',
     '}'
 
-  ].join('\n')
+    ].join('\n')
 };
 
 module.exports = BarrelDistortionFragment;
 
-},{}],6:[function(require,module,exports){
+},{}],6:[function(_dereq_,module,exports){
+/**
+ * TODO(smus): Implement coefficient inversion.
+ */
+function Distortion(coefficients) {
+  this.coefficients = coefficients;
+}
+
+/**
+ * Calculates the inverse distortion for a radius.
+ * </p><p>
+ * Allows to compute the original undistorted radius from a distorted one.
+ * See also getApproximateInverseDistortion() for a faster but potentially
+ * less accurate method.
+ *
+ * @param {Number} radius Distorted radius from the lens center in tan-angle units.
+ * @return {Number} The undistorted radius in tan-angle units.
+ */
+Distortion.prototype.distortInverse = function(radius) {
+  // Secant method.
+  var r0 = radius / 0.9;
+  var r1 = radius * 0.9;
+  var dr0 = radius - this.distort(r0);
+  while (Math.abs(r1 - r0) > 0.0001 /** 0.1mm */) {
+    var dr1 = radius - this.distort(r1);
+    var r2 = r1 - dr1 * ((r1 - r0) / (dr1 - dr0));
+    r0 = r1;
+    r1 = r2;
+    dr0 = dr1;
+  }
+  return r1;
+}
+
+
+/**
+ * Distorts a radius by its distortion factor from the center of the lenses.
+ *
+ * @param {Number} radius Radius from the lens center in tan-angle units.
+ * @return {Number} The distorted radius in tan-angle units.
+ */
+Distortion.prototype.distort = function(radius) {
+  return radius * this.distortionFactor_(radius);
+}
+
+/**
+ * Returns the distortion factor of a point.
+ *
+ * @param {Number} radius Radius of the point from the lens center in tan-angle units.
+ * @return {Number} The distortion factor. Multiply by this factor to distort points.
+ */
+Distortion.prototype.distortionFactor_ = function(radius) {
+  var result = 1.0;
+  var rFactor = 1.0;
+  var rSquared = radius * radius;
+
+  for (var i = 0; i < this.coefficients.length; i++) {
+    var ki = this.coefficients[i];
+    rFactor *= rSquared;
+    result += ki * rFactor;
+  }
+
+  return result;
+}
+
+module.exports = Distortion;
+
+},{}],7:[function(_dereq_,module,exports){
 /*
  * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -678,7 +986,7 @@ Emitter.prototype.on = function(eventName, callback) {
 
 module.exports = Emitter;
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(_dereq_,module,exports){
 /*
  * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -694,12 +1002,12 @@ module.exports = Emitter;
  * limitations under the License.
  */
 
-var WebVRManager = require('./webvr-manager.js');
+var WebVRManager = _dereq_('./webvr-manager.js');
 
 window.WebVRConfig = window.WebVRConfig || {};
 window.WebVRManager = WebVRManager;
 
-},{"./webvr-manager.js":13}],8:[function(require,module,exports){
+},{"./webvr-manager.js":14}],9:[function(_dereq_,module,exports){
 /*
  * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -727,7 +1035,7 @@ var Modes = {
 
 module.exports = Modes;
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(_dereq_,module,exports){
 /*
  * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -743,7 +1051,7 @@ module.exports = Modes;
  * limitations under the License.
  */
 
-var Util = require('./util.js');
+var Util = _dereq_('./util.js');
 
 function RotateInstructions() {
   this.loadIcon_();
@@ -851,7 +1159,7 @@ RotateInstructions.prototype.loadIcon_ = function() {
 
 module.exports = RotateInstructions;
 
-},{"./util.js":10}],10:[function(require,module,exports){
+},{"./util.js":11}],11:[function(_dereq_,module,exports){
 /*
  * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -917,9 +1225,24 @@ Util.isLandscapeMode = function() {
 
 module.exports = Util;
 
-},{}],11:[function(require,module,exports){
-var Emitter = require('./emitter.js');
-var Util = require('./util.js');
+},{}],12:[function(_dereq_,module,exports){
+/*
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+var Emitter = _dereq_('./emitter.js');
+var Util = _dereq_('./util.js');
 
 var DEFAULT_VIEWER = 'CardboardV1';
 var VIEWER_KEY = 'WEBVR_CARDBOARD_VIEWER';
@@ -934,7 +1257,11 @@ var VIEWER_KEY = 'WEBVR_CARDBOARD_VIEWER';
 function ViewerSelector(options) {
   // Try to load the selected key from local storage. If none exists, use the
   // default key.
-  this.selectedKey = localStorage[VIEWER_KEY] || DEFAULT_VIEWER;
+  try {
+    this.selectedKey = localStorage.getItem(VIEWER_KEY) || DEFAULT_VIEWER;
+  } catch(error) {
+    console.error('Failed to load viewer profile: %s', error);
+  }
   this.dialog = this.createDialog_(options);
   this.options = options;
   document.body.appendChild(this.dialog);
@@ -973,7 +1300,13 @@ ViewerSelector.prototype.onSave_ = function() {
   }
 
   this.emit('change', this.options[this.selectedKey]);
-  localStorage[VIEWER_KEY] = this.selectedKey;
+
+  // Attempt to save the viewer profile, but fails in private mode.
+  try {
+    localStorage.setItem(VIEWER_KEY, this.selectedKey);
+  } catch(error) {
+    console.error('Failed to save viewer profile: %s', error);
+  }
   this.hide();
 };
 
@@ -1012,7 +1345,7 @@ ViewerSelector.prototype.createDialog_ = function(options) {
 
   dialog.appendChild(this.createH1_('Select your viewer'));
   for (var id in options) {
-    dialog.appendChild(this.createChoice_(id, options[id].name));
+    dialog.appendChild(this.createChoice_(id, options[id].label));
   }
   dialog.appendChild(this.createButton_('Save', this.onSave_.bind(this)));
 
@@ -1083,7 +1416,7 @@ ViewerSelector.prototype.createButton_ = function(label, onclick) {
 
 module.exports = ViewerSelector;
 
-},{"./emitter.js":6,"./util.js":10}],12:[function(require,module,exports){
+},{"./emitter.js":7,"./util.js":11}],13:[function(_dereq_,module,exports){
 /*
  * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1099,7 +1432,7 @@ module.exports = ViewerSelector;
  * limitations under the License.
  */
 
-var Util = require('./util.js');
+var Util = _dereq_('./util.js');
 
 /**
  * Android and iOS compatible wakelock implementation.
@@ -1159,7 +1492,7 @@ function getWakeLock() {
 
 module.exports = getWakeLock();
 
-},{"./util.js":10}],13:[function(require,module,exports){
+},{"./util.js":11}],14:[function(_dereq_,module,exports){
 /*
  * Copyright 2015 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1175,15 +1508,15 @@ module.exports = getWakeLock();
  * limitations under the License.
  */
 
-var ButtonManager = require('./button-manager.js');
-var CardboardDistorter = require('./cardboard-distorter.js');
-var DeviceInfo = require('./device-info.js');
-var Emitter = require('./emitter.js');
-var Modes = require('./modes.js');
-var RotateInstructions = require('./rotate-instructions.js');
-var Util = require('./util.js');
-var ViewerSelector = require('./viewer-selector.js');
-var Wakelock = require('./wakelock.js');
+var ButtonManager = _dereq_('./button-manager.js');
+var CardboardDistorter = _dereq_('./cardboard-distorter.js');
+var DeviceInfo = _dereq_('./device-info.js');
+var Emitter = _dereq_('./emitter.js');
+var Modes = _dereq_('./modes.js');
+var RotateInstructions = _dereq_('./rotate-instructions.js');
+var Util = _dereq_('./util.js');
+var ViewerSelector = _dereq_('./viewer-selector.js');
+var Wakelock = _dereq_('./wakelock.js');
 
 /**
  * Helper for getting in and out of VR mode.
@@ -1207,17 +1540,25 @@ function WebVRManager(renderer, effect, params) {
   this.mode = Modes.UNKNOWN;
 
   // Set option to hide the button.
-  var hideButton = this.params.hideButton || false;
+  this.hideButton = this.params.hideButton || false;
+  // Whether or not the FOV should be distorted or un-distorted. By default, it
+  // should be distorted, but in the case of vertex shader based distortion,
+  // ensure that we use undistorted parameters.
+  this.isUndistorted = !!this.params.isUndistorted;
 
   // Save the THREE.js renderer and effect for later.
   this.renderer = renderer;
   this.effect = effect;
-  this.distorter = new CardboardDistorter(renderer);
   this.button = new ButtonManager();
   this.rotateInstructions = new RotateInstructions();
   this.viewerSelector = new ViewerSelector(DeviceInfo.Viewers);
 
-  console.log('Using the %s viewer.', this.getViewer().name);
+  // Create device info and set the correct default viewer.
+  this.deviceInfo = new DeviceInfo();
+  this.deviceInfo.viewer = DeviceInfo.Viewers[this.viewerSelector.selectedKey];
+  console.log('Using the %s viewer.', this.getViewer().label);
+
+  this.distorter = new CardboardDistorter(renderer, this.deviceInfo);
 
   this.isVRCompatible = false;
   this.isFullscreenDisabled = !!Util.getQueryParameter('no_fullscreen');
@@ -1227,15 +1568,16 @@ function WebVRManager(renderer, effect, params) {
     this.startMode = startModeParam;
   }
 
-  // Set the correct viewer and listen for changes.
-  this.onViewerChanged_(this.getViewer());
+  // Set the correct viewer profile, but only if this is Cardboard.
+  if (Util.isMobile()) {
+    this.onViewerChanged_(this.getViewer());
+  }
+  // Listen for changes to the viewer.
   this.viewerSelector.on('change', this.onViewerChanged_.bind(this));
 
-  if (hideButton) {
+  if (this.hideButton) {
     this.button.setVisibility(false);
   }
-
-  var deviceInfo = new DeviceInfo();
 
   // Check if the browser is compatible with WebVR.
   this.getDeviceByType_(HMDVRDevice).then(function(hmd) {
@@ -1247,7 +1589,7 @@ function WebVRManager(renderer, effect, params) {
       this.isVRCompatible = true;
       // Only enable distortion if we are dealing using the polyfill, we have a
       // perfect device match, and it's not prevented via configuration.
-      if (hmd.deviceName.indexOf('webvr-polyfill') == 0 && deviceInfo.getDevice() &&
+      if (hmd.deviceName.indexOf('webvr-polyfill') == 0 && this.deviceInfo.getDevice() &&
           !WebVRConfig.PREVENT_DISTORTION) {
         this.distorter.setActive(true);
       }
@@ -1325,7 +1667,15 @@ WebVRManager.prototype.isVRMode = function() {
 };
 
 WebVRManager.prototype.getViewer = function() {
-  return DeviceInfo.Viewers[this.viewerSelector.selectedKey];
+  return this.deviceInfo.viewer;
+};
+
+WebVRManager.prototype.getDevice = function() {
+  return this.deviceInfo.device;
+};
+
+WebVRManager.prototype.getDeviceInfo = function() {
+  return this.deviceInfo;
 };
 
 WebVRManager.prototype.render = function(scene, camera, timestamp) {
@@ -1382,6 +1732,11 @@ WebVRManager.prototype.setMode_ = function(mode) {
     } else {
       WebVRConfig.TOUCH_PANNER_DISABLED = false;
     }
+  }
+
+  if (this.mode == Modes.VR) {
+    // In VR mode, set the HMDVRDevice parameters.
+    this.setHMDVRDeviceParams_(this.getViewer());
   }
 };
 
@@ -1584,30 +1939,48 @@ WebVRManager.prototype.exitFullscreen_ = function() {
 };
 
 WebVRManager.prototype.onViewerChanged_ = function(viewer) {
+  this.deviceInfo.setViewer(viewer);
+
+  // Update the distortion appropriately.
+  this.distorter.recalculateUniforms();
+
+  // And update the HMDVRDevice parameters.
+  this.setHMDVRDeviceParams_(viewer);
+
+  // Notify anyone interested in this event.
   this.emit('viewerchange', viewer);
-
-  // Set the proper coefficients.
-  this.distorter.setDistortionCoefficients(viewer.distortionCoefficients);
-
-  // And update the camera FOV.
-  this.setCardboardFov_(viewer.fov);
 };
 
 /**
- * Sets the FOV of the CardboardHMDVRDevice. These changes are ultimately
- * handled by VREffect.
+ * Sets parameters on CardboardHMDVRDevice. These changes are ultimately handled
+ * by VREffect.
  */
-WebVRManager.prototype.setCardboardFov_ = function(fov) {
+WebVRManager.prototype.setHMDVRDeviceParams_ = function(viewer) {
   this.getDeviceByType_(HMDVRDevice).then(function(hmd) {
-    if (hmd) {
-      hmd.fov.upDegrees = fov;
-      hmd.fov.downDegrees = fov;
-      hmd.fov.leftDegrees = fov;
-      hmd.fov.rightDegrees = fov;
+    if (!hmd) {
+      return;
     }
-  });
+
+    // If we can set fields of view, do that now.
+    if (hmd.setFieldOfView) {
+      // Calculate the optimal field of view for each eye.
+      hmd.setFieldOfView(this.deviceInfo.getFieldOfViewLeftEye(this.isUndistorted),
+                         this.deviceInfo.getFieldOfViewRightEye(this.isUndistorted));
+    }
+
+    // Note: setInterpupillaryDistance is not part of the WebVR standard.
+    if (hmd.setInterpupillaryDistance) {
+      hmd.setInterpupillaryDistance(viewer.interLensDistance);
+    }
+
+    if (hmd.setRenderRect) {
+      // TODO(smus): If we can set the render rect, do it.
+      //var renderRect = this.deviceInfo.getUndistortedViewportLeftEye();
+      //hmd.setRenderRect(renderRect, renderRect);
+    }
+  }.bind(this));
 };
 
 module.exports = WebVRManager;
 
-},{"./button-manager.js":2,"./cardboard-distorter.js":3,"./device-info.js":4,"./emitter.js":6,"./modes.js":8,"./rotate-instructions.js":9,"./util.js":10,"./viewer-selector.js":11,"./wakelock.js":12}]},{},[7]);
+},{"./button-manager.js":2,"./cardboard-distorter.js":3,"./device-info.js":4,"./emitter.js":7,"./modes.js":9,"./rotate-instructions.js":10,"./util.js":11,"./viewer-selector.js":12,"./wakelock.js":13}]},{},[8]);

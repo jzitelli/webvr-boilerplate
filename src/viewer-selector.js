@@ -1,3 +1,18 @@
+/*
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 var Emitter = require('./emitter.js');
 var Util = require('./util.js');
 
@@ -14,7 +29,11 @@ var VIEWER_KEY = 'WEBVR_CARDBOARD_VIEWER';
 function ViewerSelector(options) {
   // Try to load the selected key from local storage. If none exists, use the
   // default key.
-  this.selectedKey = localStorage[VIEWER_KEY] || DEFAULT_VIEWER;
+  try {
+    this.selectedKey = localStorage.getItem(VIEWER_KEY) || DEFAULT_VIEWER;
+  } catch(error) {
+    console.error('Failed to load viewer profile: %s', error);
+  }
   this.dialog = this.createDialog_(options);
   this.options = options;
   document.body.appendChild(this.dialog);
@@ -53,7 +72,13 @@ ViewerSelector.prototype.onSave_ = function() {
   }
 
   this.emit('change', this.options[this.selectedKey]);
-  localStorage[VIEWER_KEY] = this.selectedKey;
+
+  // Attempt to save the viewer profile, but fails in private mode.
+  try {
+    localStorage.setItem(VIEWER_KEY, this.selectedKey);
+  } catch(error) {
+    console.error('Failed to save viewer profile: %s', error);
+  }
   this.hide();
 };
 
@@ -92,7 +117,7 @@ ViewerSelector.prototype.createDialog_ = function(options) {
 
   dialog.appendChild(this.createH1_('Select your viewer'));
   for (var id in options) {
-    dialog.appendChild(this.createChoice_(id, options[id].name));
+    dialog.appendChild(this.createChoice_(id, options[id].label));
   }
   dialog.appendChild(this.createButton_('Save', this.onSave_.bind(this)));
 
