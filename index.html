@@ -4,7 +4,7 @@
 <head>
 <title>Web VR boilerplate</title>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, shrink-to-fit=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -59,6 +59,11 @@ WebVRConfig = {
   //SHOW_EYE_CENTERS: true, // Default: false.
 };
 </script>
+
+<!--
+  A polyfill for Promises. Needed for IE and Edge.
+  -->
+<script src="bower_components/promise-polyfill/Promise.min.js"></script>
 
 <!--
   three.js 3d library
