@@ -35,7 +35,7 @@ WebVRConfig = {
    */
 
   // Forces availability of VR mode.
-  //FORCE_ENABLE_VR: true, // Default: false.
+  FORCE_ENABLE_VR: true // Default: false.
   // Complementary filter coefficient. 0 for accelerometer, 1 for gyro.
   //K_FILTER: 0.98, // Default: 0.98.
   // How far into the future to predict during fast motion.
@@ -68,7 +68,8 @@ WebVRConfig = {
 <!--
   three.js 3d library
   -->
-<script src="bower_components/threejs/build/three.js"></script>
+<!-- <script src="bower_components/threejs/build/three.js"></script> -->
+<script src="bower_components/threejs/build/three-dev.js"></script>
 
 <!--
   VRControls.js acquires positional information from connected VR devices and applies the transformations to a three.js camera object.
@@ -78,7 +79,8 @@ WebVRConfig = {
 <!--
   VREffect.js handles stereo camera setup and rendering.
   -->
-<script src="bower_components/threejs/examples/js/effects/VREffect.js"></script>
+<!-- <script src="bower_components/threejs/examples/js/effects/VREffect.js"></script> -->
+<script src="bower_components/threejs/examples/js/effects/CardboardEffect.js"></script>
 
 <!--
   A polyfill for WebVR using the Device{Motion,Orientation}Event API.
@@ -94,7 +96,7 @@ WebVRConfig = {
 <script>
 // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
 // Only enable it if you actually need to.
-var renderer = new THREE.WebGLRenderer({antialias: true});
+var renderer = new THREE.WebGLRenderer(); //{antialias: true});
 renderer.setPixelRatio(window.devicePixelRatio);
 
 // Append the canvas element created by the renderer to document body element.
@@ -104,13 +106,15 @@ document.body.appendChild(renderer.domElement);
 var scene = new THREE.Scene();
 
 // Create a three.js camera.
-var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+var camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.focalLength = 3;
 
 // Apply VR headset positional data to camera.
 var controls = new THREE.VRControls(camera);
 
 // Apply VR stereo rendering to renderer.
-var effect = new THREE.VREffect(renderer);
+//var effect = new THREE.VREffect(renderer);
+var effect = new THREE.CardboardEffect(renderer);
 effect.setSize(window.innerWidth, window.innerHeight);
 
 
@@ -145,8 +149,11 @@ var manager = new WebVRManager(renderer, effect, params);
 
 // Create 3D objects.
 var geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-var material = new THREE.MeshNormalMaterial();
+var light = new THREE.PointLight(0xffffff, 1);
+scene.add(light);
+var material = new THREE.MeshLambertMaterial({color: 0xff0000});
 var cube = new THREE.Mesh(geometry, material);
+cube.frustumCulled = false;
 
 // Position cube mesh
 cube.position.z = -1;
@@ -154,6 +161,7 @@ cube.position.z = -1;
 
 // Add cube mesh to your three.js scene
 scene.add(cube);
+
 // Request animation frame loop function
 function animate(timestamp) {
   // Apply rotation to cube mesh

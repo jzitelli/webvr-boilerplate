@@ -63,7 +63,7 @@ function WebVRManager(renderer, effect, params) {
   this.deviceInfo.viewer = DeviceInfo.Viewers[this.viewerSelector.selectedKey];
   console.log('Using the %s viewer.', this.getViewer().label);
 
-  this.distorter = new CardboardDistorter(renderer, this.deviceInfo);
+  //this.distorter = new CardboardDistorter(renderer, this.deviceInfo);
 
   this.isVRCompatible = false;
   this.isFullscreenDisabled = !!Util.getQueryParameter('no_fullscreen');
@@ -88,7 +88,7 @@ function WebVRManager(renderer, effect, params) {
   this.getDeviceByType_(HMDVRDevice).then(function(hmd) {
     // Activate either VR or Immersive mode.
     if (WebVRConfig.FORCE_DISTORTION) {
-      this.distorter.setActive(true);
+      //this.distorter.setActive(true);
       this.isVRCompatible = true;
     } else if (hmd) {
       this.isVRCompatible = true;
@@ -96,7 +96,7 @@ function WebVRManager(renderer, effect, params) {
       // perfect device match, and it's not prevented via configuration.
       if (hmd.deviceName.indexOf('webvr-polyfill') == 0 && this.deviceInfo.getDevice() &&
           !WebVRConfig.PREVENT_DISTORTION) {
-        this.distorter.setActive(true);
+        //this.distorter.setActive(true);
       }
       this.hmd = hmd;
     }
@@ -187,9 +187,9 @@ WebVRManager.prototype.render = function(scene, camera, timestamp) {
   this.resizeIfNeeded_(camera);
 
   if (this.isVRMode()) {
-    this.distorter.preRender();
+    //this.distorter.preRender();
     this.effect.render(scene, camera);
-    this.distorter.postRender();
+    //this.distorter.postRender();
   } else {
     // Scene may be an array of two scenes, one for each eye.
     if (scene instanceof Array) {
@@ -241,9 +241,7 @@ WebVRManager.prototype.setMode_ = function(mode) {
 
   if (this.mode == Modes.VR) {
     // In VR mode, set the HMDVRDevice parameters.
-    if (this.hmd && this.hmd.deviceName.indexOf('webvr-polyfill') === 0) {
-      this.setHMDVRDeviceParams_(this.getViewer());
-    }
+    this.setHMDVRDeviceParams_(this.getViewer());
   }
 };
 
@@ -328,12 +326,12 @@ WebVRManager.prototype.anyModeToVR_ = function() {
   this.requestFullscreen_();
   //this.effect.setFullScreen(true);
   this.wakelock.request();
-  this.distorter.patch();
+  //this.distorter.patch();
 };
 
 WebVRManager.prototype.vrToMagicWindow_ = function() {
   //this.releaseOrientationLock_();
-  this.distorter.unpatch();
+  //this.distorter.unpatch();
 
   // Android bug: when returning from VR, resize the effect.
   this.resize_();
@@ -345,7 +343,7 @@ WebVRManager.prototype.anyModeToNormal_ = function() {
   //this.releaseOrientationLock_();
   this.releasePointerLock_();
   this.wakelock.release();
-  this.distorter.unpatch();
+  //this.distorter.unpatch();
 
   // Android bug: when returning from VR, resize the effect.
   this.resize_();
@@ -424,14 +422,18 @@ WebVRManager.prototype.releaseOrientationLock_ = function() {
 };
 
 WebVRManager.prototype.requestFullscreen_ = function() {
-  var canvas = document.body;
-  //var canvas = this.renderer.domElement;
+  //var canvas = document.body;
+  var canvas = this.renderer.domElement;
+  var params;
+  // if (this.hmd) {
+  //     params = {vrDisplay: this.hmd};
+  // }
   if (canvas.requestFullscreen) {
     canvas.requestFullscreen();
   } else if (canvas.mozRequestFullScreen) {
-    canvas.mozRequestFullScreen({vrDisplay: this.hmd});
+    canvas.mozRequestFullScreen(params);
   } else if (canvas.webkitRequestFullscreen) {
-    canvas.webkitRequestFullscreen({vrDisplay: this.hmd});
+    canvas.webkitRequestFullscreen(params);
   }
 };
 
@@ -449,7 +451,7 @@ WebVRManager.prototype.onViewerChanged_ = function(viewer) {
   this.deviceInfo.setViewer(viewer);
 
   // Update the distortion appropriately.
-  this.distorter.recalculateUniforms();
+  //this.distorter.recalculateUniforms();
 
   // And update the HMDVRDevice parameters.
   this.setHMDVRDeviceParams_(viewer);
