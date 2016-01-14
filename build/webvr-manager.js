@@ -1582,17 +1582,8 @@ function WebVRManager(renderer, effect, params) {
   // Check if the browser is compatible with WebVR.
   this.getDeviceByType_(HMDVRDevice).then(function(hmd) {
     // Activate either VR or Immersive mode.
-    if (WebVRConfig.FORCE_DISTORTION) {
-      //this.distorter.setActive(true);
+    if (hmd) {
       this.isVRCompatible = true;
-    } else if (hmd) {
-      this.isVRCompatible = true;
-      // Only enable distortion if we are dealing using the polyfill, we have a
-      // perfect device match, and it's not prevented via configuration.
-      if (hmd.deviceName.indexOf('webvr-polyfill') == 0 && this.deviceInfo.getDevice() &&
-          !WebVRConfig.PREVENT_DISTORTION) {
-        //this.distorter.setActive(true);
-      }
       this.hmd = hmd;
     }
     // Set the right mode.
@@ -1917,18 +1908,14 @@ WebVRManager.prototype.releaseOrientationLock_ = function() {
 };
 
 WebVRManager.prototype.requestFullscreen_ = function() {
-  //var canvas = document.body;
-  var canvas = this.renderer.domElement;
-  var params;
-  // if (this.hmd) {
-  //     params = {vrDisplay: this.hmd};
-  // }
+  var canvas = document.body;
+  //var canvas = this.renderer.domElement;
   if (canvas.requestFullscreen) {
     canvas.requestFullscreen();
   } else if (canvas.mozRequestFullScreen) {
-    canvas.mozRequestFullScreen(params);
+    canvas.mozRequestFullScreen();
   } else if (canvas.webkitRequestFullscreen) {
-    canvas.webkitRequestFullscreen(params);
+    canvas.webkitRequestFullscreen();
   }
 };
 

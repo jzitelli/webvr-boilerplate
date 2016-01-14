@@ -69,7 +69,7 @@ WebVRConfig = {
   three.js 3d library
   -->
 <!-- <script src="bower_components/threejs/build/three.js"></script> -->
-<script src="bower_components/threejs/build/three-dev.js"></script>
+<script src="bower_components/threejs/build/three-r74dev.js"></script>
 
 <!--
   VRControls.js acquires positional information from connected VR devices and applies the transformations to a three.js camera object.
@@ -107,7 +107,7 @@ var scene = new THREE.Scene();
 
 // Create a three.js camera.
 var camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.focalLength = 3;
+camera.focalLength = 5;
 
 // Apply VR headset positional data to camera.
 var controls = new THREE.VRControls(camera);
@@ -149,11 +149,11 @@ var manager = new WebVRManager(renderer, effect, params);
 
 // Create 3D objects.
 var geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-var light = new THREE.PointLight(0xffffff, 1);
-scene.add(light);
-var material = new THREE.MeshLambertMaterial({color: 0xff0000});
+//var light = new THREE.PointLight(0xffffff, 1);
+//scene.add(light);
+//var material = new THREE.MeshLambertMaterial({color: 0xff0000});
+var material = new THREE.MeshNormalMaterial();
 var cube = new THREE.Mesh(geometry, material);
-cube.frustumCulled = false;
 
 // Position cube mesh
 cube.position.z = -1;
