@@ -71,8 +71,7 @@ WebVRConfig = {
 <!--
   three.js 3d library
   -->
-<!-- <script src="bower_components/threejs/build/three.js"></script> -->
-<script src="bower_components/threejs/build/three-r74dev.js"></script>
+<script src="bower_components/threejs/build/three.js"></script>
 
 <!--
   VRControls.js acquires positional information from connected VR devices and applies the transformations to a three.js camera object.
@@ -82,8 +81,7 @@ WebVRConfig = {
 <!--
   VREffect.js handles stereo camera setup and rendering.
   -->
-<!-- <script src="bower_components/threejs/examples/js/effects/VREffect.js"></script> -->
-<script src="bower_components/threejs/examples/js/effects/CardboardEffect.js"></script>
+<script src="bower_components/threejs/examples/js/effects/VREffect.js"></script>
 
 <!--
   A polyfill for WebVR using the Device{Motion,Orientation}Event API.
@@ -116,8 +114,7 @@ camera.focalLength = 5;
 var controls = new THREE.VRControls(camera);
 
 // Apply VR stereo rendering to renderer.
-//var effect = new THREE.VREffect(renderer);
-var effect = new THREE.CardboardEffect(renderer);
+var effect = new THREE.VREffect(renderer);
 effect.setSize(window.innerWidth, window.innerHeight);
 
 
