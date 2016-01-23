@@ -8,6 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="manifest" href="/manifest.json">
 <style>
 body {
   width: 100%;
@@ -52,11 +53,13 @@ WebVRConfig = {
   // Forces distortion in VR mode.
   //FORCE_DISTORTION: true, // Default: false.
   // Override the distortion background color.
-  //DISTORTION_BGCOLOR: {x: 1, y: 0, z: 0, w: 1}, // Default: (0,0,0,1).
+  // DISTORTION_BGCOLOR: {x: 1, y: 0, z: 0, w: 1}, // Default: (0,0,0,1).
   // Prevent distortion from happening.
   //PREVENT_DISTORTION: true, // Default: false.
   // Show eye centers for debugging.
-  //SHOW_EYE_CENTERS: true, // Default: false.
+  // SHOW_EYE_CENTERS: true, // Default: false.
+  // Prevent the online DPDB from being fetched.
+  // NO_DPDB_FETCH: true,  // Default: false.
 };
 </script>
 
@@ -154,10 +157,15 @@ cube.position.z = -1;
 
 // Add cube mesh to your three.js scene
 scene.add(cube);
+
 // Request animation frame loop function
+var lastRender = 0;
 function animate(timestamp) {
+  var delta = Math.min(timestamp - lastRender, 500);
+  lastRender = timestamp;
+
   // Apply rotation to cube mesh
-  cube.rotation.y += 0.01;
+  cube.rotation.y += delta * 0.0006;
 
   // Update VR headset position and apply to camera.
   controls.update();
@@ -169,7 +177,7 @@ function animate(timestamp) {
 }
 
 // Kick off animation loop
-animate();
+animate(performance ? performance.now() : Date.now());
 
 // Reset the position sensor when 'z' pressed.
 function onKey(event) {
