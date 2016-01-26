@@ -1,11 +1,15 @@
 {
   "name": "webvr-boilerplate",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "homepage": "https://github.com/jzitelli/webvr-boilerplate",
   "authors": [
     "Boris Smus <boris@smus.com>",
     "Jeffrey Zitelli (https://github.com/jzitelli)"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jzitelli/webvr-boilerplate.git"
+  },
   "description": "A starting point for web-based VR experiences that work in both Cardboard and Oculus.",
   "main": "build/webvr-manager.js",
   "keywords": [
@@ -23,8 +27,10 @@
     "tests"
   ],
   "dependencies": {
-    "three.js": "git://github.com/jzitelli/three.js.git#dev",
     "webvr-polyfill": "git://github.com/jzitelli/webvr-polyfill.git",
     "promise-polyfill": "~2.1.0"
+  },
+  "devDependencies": {
+    "three.js": "git://github.com/jzitelli/three.js.git#dev"
   }
 }
