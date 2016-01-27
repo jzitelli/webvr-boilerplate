@@ -88,11 +88,14 @@ WebVRConfig = {
   -->
 <script src="node_modules/webvr-polyfill/build/webvr-polyfill.js"></script>
 
+
+<script src="node_modules/stats.js/build/stats.min.js"></script>
+
+
 <!--
   Helps enter and exit VR mode, provides best practices while in VR.
   -->
 <script src="build/webvr-manager.js"></script>
-
 
 <script>
 // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
@@ -103,11 +106,20 @@ renderer.setPixelRatio(window.devicePixelRatio);
 // Append the canvas element created by the renderer to document body element.
 document.body.appendChild(renderer.domElement);
 
+
+var stats = new Stats();
+stats.setMode( 0 ); // 0: fps, 1: ms, 2: mb
+stats.domElement.style.position = 'absolute';
+stats.domElement.style.left = '0px';
+stats.domElement.style.top = '0px';
+document.body.appendChild( stats.domElement );
+
+
 // Create a three.js scene.
 var scene = new THREE.Scene();
 
 // Create a three.js camera.
-var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
 // Apply VR headset positional data to camera.
 var controls = new THREE.VRControls(camera);
@@ -146,32 +158,49 @@ var params = {
 };
 var manager = new WebVRManager(renderer, effect, params);
 
+
 // Create 3D objects.
-var geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-var material = new THREE.MeshNormalMaterial();
-var cube = new THREE.Mesh(geometry, material);
+//var geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+//var material = new THREE.MeshNormalMaterial();
+//var cube = new THREE.Mesh(geometry, material);
 
 // Position cube mesh
-cube.position.z = -1;
-
+//cube.position.z = -1;
 
 // Add cube mesh to your three.js scene
-scene.add(cube);
+//scene.add(cube);
+
+
+var objectLoader = new THREE.ObjectLoader();
+objectLoader.load('vrDesk.json', function (object) {
+  scene.add(object);
+  object.scale.set(0.01, 0.01, 0.01);
+  object.position.z -= 1.41;
+  object.position.y -= 0.7;
+}, undefined, function (err) {
+  console.log('vrDesk.json could not be loaded: ' + err);
+});
+
 
 // Request animation frame loop function
 var lastRender = 0;
 function animate(timestamp) {
+
+  stats.begin();
+
   var delta = Math.min(timestamp - lastRender, 500);
   lastRender = timestamp;
 
   // Apply rotation to cube mesh
-  cube.rotation.y += delta * 0.0006;
+  //cube.rotation.y += delta * 0.0006;
 
   // Update VR headset position and apply to camera.
   controls.update();
 
   // Render the scene through the manager.
   manager.render(scene, camera, timestamp);
+
+  stats.end();
 
   requestAnimationFrame(animate);
 }

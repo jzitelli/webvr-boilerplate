@@ -1,6 +1,6 @@
 {
   "name": "webvr-boilerplate",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "homepage": "https://github.com/jzitelli/webvr-boilerplate",
   "authors": [
     "Boris Smus <boris@smus.com>",
@@ -31,6 +31,7 @@
     "promise-polyfill": "~2.1.0"
   },
   "devDependencies": {
-    "three.js": "git://github.com/jzitelli/three.js.git#dev"
+    "three.js": "git://github.com/jzitelli/three.js.git#dev",
+    "stats.js": "git://github.com/mrdoob/stats.js.git"
   }
 }
