@@ -59,7 +59,7 @@ WebVRConfig = {
   // Show eye centers for debugging.
   // SHOW_EYE_CENTERS: true, // Default: false.
   // Prevent the online DPDB from being fetched.
-  // NO_DPDB_FETCH: true,  // Default: false.
+  NO_DPDB_FETCH: true  // Default: false.
 };
 </script>
 
@@ -97,7 +97,7 @@ WebVRConfig = {
 <script>
 // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
 // Only enable it if you actually need to.
-var renderer = new THREE.WebGLRenderer({antialias: true});
+var renderer = new THREE.WebGLRenderer(); //{antialias: true});
 renderer.setPixelRatio(window.devicePixelRatio);
 
 // Append the canvas element created by the renderer to document body element.

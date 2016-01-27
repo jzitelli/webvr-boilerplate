@@ -13,7 +13,9 @@ function CardboardDistorter(renderer) {
   this.renderer = renderer;
   this.genuineRender = renderer.render;
   this.genuineSetSize = renderer.setSize;
-
+  this.genuineSetViewport = renderer.setViewport;
+  this.genuineSetScissor = renderer.setScissor;
+  
   // Camera, scene and geometry to render the scene to a texture.
   this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
@@ -23,9 +25,10 @@ function CardboardDistorter(renderer) {
     format: THREE.RGBAFormat
   };
   this.renderTarget = new THREE.WebGLRenderTarget(512, 512, params);
+  this.renderTarget.scissorTest = true;
 
-	this.material = new THREE.MeshBasicMaterial({wireframe: true});
-	//this.material = new THREE.MeshBasicMaterial({map: this.renderTarget});
+	//this.material = new THREE.MeshBasicMaterial({wireframe: true});
+	this.material = new THREE.MeshBasicMaterial({map: this.renderTarget});
   this.scene = new THREE.Scene();
 
   var geometry = this.createWarpMeshGeometry_();
@@ -46,6 +49,14 @@ CardboardDistorter.prototype.patch = function() {
     this.renderTarget.setSize(width, height);
     this.genuineSetSize.call(this.renderer, width, height);
   }.bind(this);
+
+  this.renderer.setScissor = function(x0, y0, width, height) {
+    this.renderTarget.scissor.set(x0, y0, width, height);
+  }.bind(this);
+
+  this.renderer.setViewport = function(x0, y0, width, height) {
+    this.renderTarget.viewport.set(x0, y0, width, height);
+  }.bind(this);
 };
 
 CardboardDistorter.prototype.unpatch = function() {
@@ -54,13 +65,15 @@ CardboardDistorter.prototype.unpatch = function() {
   }
   this.renderer.render = this.genuineRender;
   this.renderer.setSize = this.genuineSetSize;
+  this.renderer.setViewport = this.genuineSetViewport;
+  this.renderer.setScissor = this.genuineSetScissor;
 };
 
 CardboardDistorter.prototype.preRender = function() {
   if (!this.isActive) {
     return;
   }
-  this.renderer.setRenderTarget(this.renderTarget);
+  //this.renderer.setRenderTarget(this.renderTarget);
 };
 
 CardboardDistorter.prototype.postRender = function() {
@@ -85,7 +98,7 @@ CardboardDistorter.prototype.setActive = function(state) {
  * re-calculate the distortion mesh.
  */
 CardboardDistorter.prototype.updateDeviceInfo = function(deviceInfo) {
-  var geometry = this.createWarpMeshGeometry2_(deviceInfo);
+  var geometry = this.createWarpMeshGeometry_(deviceInfo);
   this.updateGeometry_(geometry);
 };
 
@@ -93,14 +106,15 @@ CardboardDistorter.prototype.updateDeviceInfo = function(deviceInfo) {
  * Creates a warp mesh that is applied to the scene (which is rendered to a
  * texture).
  */
-CardboardDistorter.prototype.createWarpMeshGeometry_ = function() {
-	var distortion = new THREE.Vector2( 0.441, 0.156 );
+CardboardDistorter.prototype.createWarpMeshGeometry_ = function(deviceInfo) {
+  // var distortion = new THREE.Vector2( 0.441, 0.156 );
+  var distortion = new THREE.Vector2( 0.34, 0.55 );
+  if (deviceInfo) distortion.fromArray(deviceInfo.viewer.distortionCoefficients);
 
-	var geometry = new THREE.PlaneBufferGeometry( 1, 1, 10, 20 );
+	// var geometry = new THREE.PlaneBufferGeometry( 1, 1, 10, 20 );
 	// Original line, but it doesn't work:
-  // var geometry = new THREE.PlaneBufferGeometry( 1, 1, 10, 20 ).removeAttribute( 'normal' ).toNonIndexed();
+  var geometry = new THREE.PlaneBufferGeometry( 1, 1, 10, 20 ).removeAttribute( 'normal' ).toNonIndexed();
   
-
 	var positions = geometry.attributes.position.array;
 	var uvs = geometry.attributes.uv.array;
 

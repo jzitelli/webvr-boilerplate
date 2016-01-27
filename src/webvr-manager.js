@@ -14,7 +14,7 @@
  */
 
 var ButtonManager = require('./button-manager.js');
-var CardboardDistorter = require('./cardboard-distorter.js');
+var CardboardDistorter = require('./cardboard-distorter-mesh.js');
 var DeviceInfo = require('./device-info.js');
 var Dpdb = require('./dpdb.js');
 var Emitter = require('./emitter.js');
@@ -493,6 +493,10 @@ WebVRManager.prototype.setHMDVRDeviceParams_ = function(viewer) {
       //var renderRect = this.deviceInfo.getUndistortedViewportLeftEye();
       //hmd.setRenderRect(renderRect, renderRect);
     }
+
+    // Update the eye translation and projection matrices of VREffect.
+    this.effect.updateHMDParams();
+
   }.bind(this));
 };
 
