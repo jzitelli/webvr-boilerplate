@@ -40,7 +40,7 @@ WebVRConfig = {
   // Complementary filter coefficient. 0 for accelerometer, 1 for gyro.
   //K_FILTER: 0.98, // Default: 0.98.
   // How far into the future to predict during fast motion.
-  //PREDICTION_TIME_S: 0.040, // Default: 0.040 (in seconds).
+  PREDICTION_TIME_S: 0.020 // Default: 0.040 (in seconds).
   // Flag to disable touch panner. In case you have your own touch controls
   //TOUCH_PANNER_DISABLED: true, // Default: false.
   // Enable yaw panning only, disabling roll and pitch. This can be useful for
@@ -59,7 +59,7 @@ WebVRConfig = {
   // Show eye centers for debugging.
   // SHOW_EYE_CENTERS: true, // Default: false.
   // Prevent the online DPDB from being fetched.
-  NO_DPDB_FETCH: true  // Default: false.
+  //NO_DPDB_FETCH: true  // Default: false.
 };
 </script>
 
@@ -142,7 +142,7 @@ function onTextureLoaded(texture) {
 // Create a VR manager helper to enter and exit VR mode.
 var params = {
   hideButton: false, // Default: false.
-  isUndistorted: false // Default: false.
+  isUndistorted: true // Default: false.
 };
 var manager = new WebVRManager(renderer, effect, params);
 
