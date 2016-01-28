@@ -15,6 +15,8 @@ function CardboardDistorter(renderer) {
   this.genuineSetSize = renderer.setSize;
   this.genuineSetViewport = renderer.setViewport;
   this.genuineSetScissor = renderer.setScissor;
+  // this.genuineSetScissorTest = renderer.setScissorTest;
+  // this.genuineClear = renderer.clear;
   
   // Camera, scene and geometry to render the scene to a texture.
   this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -57,6 +59,10 @@ CardboardDistorter.prototype.patch = function() {
   this.renderer.setViewport = function(x0, y0, width, height) {
     this.renderTarget.viewport.set(x0, y0, width, height);
   }.bind(this);
+
+  // this.renderer.setScissorTest = function(bool) {};
+
+  // this.renderer.clear = function () {};
 };
 
 CardboardDistorter.prototype.unpatch = function() {
@@ -67,6 +73,8 @@ CardboardDistorter.prototype.unpatch = function() {
   this.renderer.setSize = this.genuineSetSize;
   this.renderer.setViewport = this.genuineSetViewport;
   this.renderer.setScissor = this.genuineSetScissor;
+  // this.renderer.setScissorTest = this.genuineSetScissorTest;
+  // this.renderer.clear = this.genuineClear;
 };
 
 CardboardDistorter.prototype.preRender = function() {
@@ -80,8 +88,6 @@ CardboardDistorter.prototype.postRender = function() {
   if (!this.isActive) {
     return;
   }
-  var size = this.renderer.getSize();
-  this.renderer.setViewport(0, 0, size.width, size.height);
   this.genuineRender.call(this.renderer, this.scene, this.camera);
 };
 
@@ -165,7 +171,7 @@ CardboardDistorter.prototype.createWarpMeshGeometry2_ = function(deviceInfo) {
     yScale: viewport.height / device.height,
     xTrans: 2 * (viewport.x + viewport.width / 2) / (device.width / 2) - 1,
     yTrans: 2 * (viewport.y + viewport.height / 2) / device.height - 1
-  }
+  };
 
   this.projectionLeft = Util.projectionMatrixToVector_(distortedProj);
   this.unprojectionLeft = Util.projectionMatrixToVector_(undistortedProj, params);
