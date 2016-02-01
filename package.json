@@ -32,6 +32,6 @@
   },
   "devDependencies": {
     "three.js": "git://github.com/jzitelli/three.js.git#dev",
-    "stats.js": "git://github.com/mrdoob/stats.js.git"
+    "webvr-stats.js": "git://github.com/jzitelli/webvr-stats.js.git"
   }
 }

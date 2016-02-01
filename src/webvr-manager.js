@@ -429,8 +429,8 @@ WebVRManager.prototype.releaseOrientationLock_ = function() {
 };
 
 WebVRManager.prototype.requestFullscreen_ = function() {
-  var canvas = document.body;
-  //var canvas = this.renderer.domElement;
+  //var canvas = document.body;
+  var canvas = this.renderer.domElement;
   if (canvas.requestFullscreen) {
     canvas.requestFullscreen();
   } else if (canvas.mozRequestFullScreen) {

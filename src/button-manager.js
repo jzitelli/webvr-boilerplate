@@ -74,7 +74,7 @@ function ButtonManager() {
   this.isVisible = true;
 
   this.aligner = new Aligner();
-
+  this.aligner.hide();
 }
 ButtonManager.prototype = new Emitter();
 
