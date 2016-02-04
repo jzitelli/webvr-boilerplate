@@ -74,7 +74,6 @@ function ButtonManager() {
   this.isVisible = true;
 
   this.aligner = new Aligner();
-  this.aligner.hide();
 }
 ButtonManager.prototype = new Emitter();
 
@@ -142,7 +141,8 @@ ButtonManager.prototype.setMode = function(mode, isVRCompatible) {
       // Only show the settings button on mobile.
       var isSettingsVisible = Util.isMobile() || WebVRConfig.FORCE_ENABLE_VR;
       this.settingsButton.style.display = isSettingsVisible ? 'block' : 'none';
-      this.aligner.show();
+      //this.aligner.show();
+      this.aligner.hide();
       break;
   }
 
