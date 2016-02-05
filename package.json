@@ -31,7 +31,6 @@
     "promise-polyfill": "~2.1.0"
   },
   "devDependencies": {
-    "three.js": "git://github.com/jzitelli/three.js.git#dev",
-    "webvr-stats.js": "git://github.com/jzitelli/webvr-stats.js.git"
+    "three.js": "git://github.com/jzitelli/three.js.git#dev"
   }
 }
