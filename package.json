@@ -27,7 +27,7 @@
     "tests"
   ],
   "dependencies": {
-    "webvr-polyfill": "git://github.com/jzitelli/webvr-polyfill.git",
+    "webvr-polyfill": "git://github.com/jzitelli/webvr-polyfill.git#leapmotion",
     "promise-polyfill": "~2.1.0"
   },
   "devDependencies": {
