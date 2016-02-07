@@ -38,7 +38,7 @@ WebVRConfig = {
   // Complementary filter coefficient. 0 for accelerometer, 1 for gyro.
   //K_FILTER: 0.98, // Default: 0.98.
   // How far into the future to predict during fast motion.
-  PREDICTION_TIME_S: 0.020 // Default: 0.040 (in seconds).
+  //PREDICTION_TIME_S: 0.020 // Default: 0.040 (in seconds).
   // Flag to disable touch panner. In case you have your own touch controls
   //TOUCH_PANNER_DISABLED: true, // Default: false.
   // Enable yaw panning only, disabling roll and pitch. This can be useful for
@@ -79,12 +79,12 @@ WebVRConfig = {
 <!--
   VREffect.js handles stereo camera setup and rendering.
   -->
-<!-- <script src="node_modules/three.js/examples/js/effects/VREffect.js"></script> -->
-<script src="VREffect.customize.js"></script>
+<script src="node_modules/three.js/examples/js/effects/VREffect.js"></script>
 
 <!--
   A polyfill for WebVR using the Device{Motion,Orientation}Event API.
   -->
+<script src="node_modules/leapjs/leap-0.6.4.js"></script>
 <script src="node_modules/webvr-polyfill/build/webvr-polyfill.js"></script>
 
 <!--

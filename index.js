@@ -23,15 +23,15 @@ function onLoad() {
   effect.setSize(window.innerWidth, window.innerHeight);
 
   // dat-gui controls for IPD, FOV:
-  var gui = new dat.GUI();
-  gui.add(effect, 'eyeTransL');
-  gui.add(effect, 'eyeTransR');
-  gui.add(effect, 'upDegrees');
-  gui.add(effect, 'downDegrees');
-  gui.add(effect, 'leftDegrees');
-  gui.add(effect, 'rightDegrees');
-  gui.add(effect, 'manualUpdate');
-  gui.add(effect, 'updateHMDParams');
+  // var gui = new dat.GUI();
+  // gui.add(effect, 'eyeTransL');
+  // gui.add(effect, 'eyeTransR');
+  // gui.add(effect, 'upDegrees');
+  // gui.add(effect, 'downDegrees');
+  // gui.add(effect, 'leftDegrees');
+  // gui.add(effect, 'rightDegrees');
+  // gui.add(effect, 'manualUpdate');
+  // gui.add(effect, 'updateHMDParams');
 
   // Add a repeating grid as a skybox.
   var boxWidth = 5;
