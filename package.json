@@ -1,36 +1,37 @@
 {
   "name": "webvr-boilerplate",
-  "version": "0.4.3",
-  "homepage": "https://github.com/jzitelli/webvr-boilerplate",
-  "authors": [
-    "Boris Smus <boris@smus.com>",
-    "Jeffrey Zitelli (https://github.com/jzitelli)"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/jzitelli/webvr-boilerplate.git"
-  },
+  "version": "0.3.7",
   "description": "A starting point for web-based VR experiences that work in both Cardboard and Oculus.",
-  "main": "build/webvr-manager.js",
-  "keywords": [
-    "vr",
-    "webvr",
-    "webgl",
-    "threejs"
-  ],
-  "license": "Apache2",
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "test",
-    "tests"
-  ],
+  "main": "src/main.js",
+  "directories": {
+    "test": "test"
+  },
   "dependencies": {
-    "webvr-polyfill": "git://github.com/jzitelli/webvr-polyfill.git",
-    "promise-polyfill": "~2.1.0"
+    "es6-promise": "^3.0.2",
+    "webvr-polyfill": "^0.2.4",
+    "three": "git://github.com/jzitelli/three.js.git#dev"
   },
   "devDependencies": {
-    "three.js": "git://github.com/jzitelli/three.js.git#dev"
-  }
+    "browserify": "latest",
+    "derequire": "latest",
+    "watchify": "latest"
+  },
+  "scripts": {
+    "build": "browserify src/main.js | derequire > build/webvr-manager.js",
+    "watch": "watchify src/main.js -v -d -o build/webvr-manager.js",
+    "test": "browserify test/device-info-test.js  > build/device-info-test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/borismus/webvr-boilerplate.git"
+  },
+  "keywords": [
+    "vr"
+  ],
+  "author": "Boris Smus",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/borismus/webvr-boilerplate/issues"
+  },
+  "homepage": "https://github.com/borismus/webvr-boilerplate#readme"
 }

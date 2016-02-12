@@ -1878,7 +1878,7 @@ Emitter.prototype.emit = function(eventName) {
     //console.log('No valid callback specified.');
     return;
   }
-  var args = [].slice.call(arguments)
+  var args = [].slice.call(arguments);
   // Eliminate the first param (the callback).
   args.shift();
   for (var i = 0; i < callbacks.length; i++) {
@@ -2923,7 +2923,8 @@ WebVRManager.prototype.setHMDVRDeviceParams_ = function(viewer) {
       return;
     }
     if (hmd.deviceName.indexOf('webvr-polyfill') === -1) {
-      // webvr-polyfill not in use, assume params are provided by browser/WebVR API
+      // The HMDVRDevice is not provided by WebVR Polyfill,
+      // so we assume the browser implements WebVR and has taken care of setting parameters.
       return;
     }
     // If we can set fields of view, do that now.
