@@ -9,7 +9,7 @@
   "dependencies": {
     "es6-promise": "^3.0.2",
     "webvr-polyfill": "^0.2.4",
-    "three": "git://github.com/jzitelli/three.js.git#dev"
+    "three": "git://github.com/jzitelli/three.js.git#webvr_v1"
   },
   "devDependencies": {
     "browserify": "latest",
