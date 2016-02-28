@@ -2812,7 +2812,7 @@ WebVRManager.prototype.resizeIfNeeded_ = function(camera) {
 };
 
 WebVRManager.prototype.resize_ = function() {
-  this.effect.setSize(window.innerWidth, window.innerHeight);
+  this.renderer.setSize(window.innerWidth, window.innerHeight);
 };
 
 WebVRManager.prototype.onOrientationChange_ = function(e) {
