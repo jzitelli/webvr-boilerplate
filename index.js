@@ -3,11 +3,12 @@ function onLoad() {
   // Only enable it if you actually need to.
   var renderer = new THREE.WebGLRenderer(); //{antialias: true});
   renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
 
   // Append the canvas element created by the renderer to document body element.
   document.body.appendChild(renderer.domElement);
 
-  var rS = new rStats();
+  // var rS = new rStats();
 
   // Create a three.js scene.
   var scene = new THREE.Scene();
@@ -16,22 +17,10 @@ function onLoad() {
   var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
   // Apply VR headset positional data to camera.
-  var controls = new THREE.VRControls(camera, console.log);
+  var controls = new THREE.VRControls(camera, console.error);
 
   // Apply VR stereo rendering to renderer.
-  var effect = new THREE.VREffect(renderer, console.log);
-  effect.setSize(window.innerWidth, window.innerHeight);
-
-  // dat-gui controls for IPD, FOV:
-  var gui = new dat.GUI();
-  gui.add(effect, 'eyeTransL');
-  gui.add(effect, 'eyeTransR');
-  gui.add(effect, 'upDegrees');
-  gui.add(effect, 'downDegrees');
-  gui.add(effect, 'leftDegrees');
-  gui.add(effect, 'rightDegrees');
-  gui.add(effect, 'manualUpdate');
-  gui.add(effect, 'updateHMDParams');
+  var effect = new THREE.VREffect(renderer, console.error);
 
   // Add a repeating grid as a skybox.
   var boxWidth = 5;
@@ -75,9 +64,9 @@ function onLoad() {
   // Request animation frame loop function
   var lastRender = 0;
   function animate(timestamp) {
-    rS('frame').start();
-    rS('raF').tick();
-    rS('FPS').frame();
+    // rS('frame').start();
+    // rS('raF').tick();
+    // rS('FPS').frame();
 
     var delta = Math.min(timestamp - lastRender, 500);
     lastRender = timestamp;
@@ -90,8 +79,8 @@ function onLoad() {
 
     requestAnimationFrame(animate);
 
-    rS('frame').end();
-    rS().update();
+    // rS('frame').end();
+    // rS().update();
   }
 
   // Kick off animation loop
