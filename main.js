@@ -75,7 +75,7 @@ function onLoad() {
     controls.update();
 
     // Render the scene through the manager.
-    manager.render(scene, camera, timestamp);
+    effect.render(scene, camera);
 
     requestAnimationFrame(animate);
 
